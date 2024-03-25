@@ -183,5 +183,29 @@ router.get("/bulk", async (req, res) => {
     })
 })
 
+router.get("/getuserinfo", authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        console.log("User information:", user);
+
+        return res.status(200).json({
+            user: {
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                _id: user._id
+            }
+        });
+    } catch (error) {
+        // Handle potential errors like database connection issues
+        return res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+
 
 module.exports = router;
