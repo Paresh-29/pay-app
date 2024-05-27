@@ -1,9 +1,16 @@
-const mongoose  = require("mongoose");
-const { Schema } = require("zod");
+
+const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
-mongoose.connect("mongodb+srv://pareshkumarbarick99:w2ijv3i03GBlkDFA@cluster0.gzdrjh0.mongodb.net/paytm");
+// Connect to MongoDB
+mongoose.connect("mongodb+srv://pareshkumarbarick99:w2ijv3i03GBlkDFA@cluster0.gzdrjh0.mongodb.net/paytm", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+})
+.then(() => console.log('Database connected successfully'))
+.catch((error) => console.error('Database connection error:', error));
 
+// Define User Schema
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
@@ -30,32 +37,24 @@ const userSchema = new mongoose.Schema({
         required: true,
         trim: true,
         maxlength: 50
-    },
-
+    }
 });
 
-//Methods to generate a hash from plain text
-userSchema.methods.createHash = async function (plainTextPasswprd) {
-
-    //Hashing user's salt and pass with 10 iterations,
-    const saltRound  = 10;
-    
-    //First method to generate a salt and then create hash
+// Method to generate a hash from plain text
+userSchema.methods.createHash = async function(plainTextPassword) {
+    const saltRound = 10;
     const salt = await bcrypt.genSalt(saltRound);
-    return await bcrypt.hash(plainTextPasswprd, salt);
+    return await bcrypt.hash(plainTextPassword, salt);
+};
 
-    //second method - or we can create salt and hash in a single method also
-    //return await bcrypt.hash(plainTextPassword, saltRound);
+// Method to validate the candidate password with stored hash
+userSchema.methods.validatePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
 
-    //validating the candidate password with stored hash and hash function
-    userSchema.methods.validatePassword = async function (candidatePassword) {
-        return await bcrypt.compare(candidatePassword, this.password)
-    }
-
-}
-
-const accountSchema  = mongoose.Schema({
-    userId : {
+// Define Account Schema
+const accountSchema = new mongoose.Schema({
+    userId: {
         type: mongoose.Schema.Types.ObjectId, // reference to user model
         ref: 'User',
         required: true
@@ -66,10 +65,12 @@ const accountSchema  = mongoose.Schema({
     }
 });
 
+// Create User and Account models
 const User = mongoose.model('User', userSchema);
-const Account = mongoose.model('Account', accountSchema)
+const Account = mongoose.model('Account', accountSchema);
 
+// Export the models
 module.exports = {
     User,
     Account
-}
+};
