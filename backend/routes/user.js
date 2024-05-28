@@ -116,29 +116,50 @@ router.put("/", authMiddleware, async (req, res) => {
     })
 })
 
-router.get("/bulk", async (req, res) => {
+router.get("/bulk",authMiddleware, async (req, res) => {
     const filter = req.query.filter || "";
+    const currentUserID = req.userId; // Accessing the logged-in user's ID from the middleware
+try {
+    
+        const users = await User.find({
+            
+            $and: [
+                {
+                    $or: [
+                        { firstName: { "$regex": filter, "$options": "i" } },
+                        { lastName: { "$regex": filter, "$options": "i" } }
+                    ]
+                },
+                { _id: { $ne: currentUserID } } // Exclude the logged-in user
+            ]
+        });
+    
+        res.json({
+            user: users.map(user => ({
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                _id: user._id
+            }))
+        })
+} catch (error) {
+    res.status(500).json({error: "server error"});
+}
+});
 
-    const users = await User.find({
-        $or: [{
-            firstName: {
-                "$regex": filter
-            }
-        }, {
-            lastName: {
-                "$regex": filter
-            }
-        }]
-    })
+router.get("/current_user", authMiddleware, async(req, res) => {
+    try {
+        const userId = req.userId;
+        const currentUser = await User.findById(userId);
+        if(!currentUser) {
+            return res.status(404).json({error: "User not found"});
+        }
+        res.json({user: currentUser});
+    } catch (error) {
+        console.error("Error fetching user", error);
+        res.status(500).json({error: "Internal server error"});
+    }
 
-    res.json({
-        user: users.map(user => ({
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            _id: user._id
-        }))
-    })
 })
 
 module.exports = router;
