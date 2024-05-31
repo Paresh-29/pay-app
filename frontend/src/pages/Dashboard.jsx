@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { AppBar } from "../components/AppBar"
 import { Balance } from "../components/Balance"
 import { Users } from "../components/Users"
